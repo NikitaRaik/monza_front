@@ -1,0 +1,32 @@
+on: push
+
+env:
+  AZURE_WEBAPP_NAME: irinamonza # set this to your application's name
+  AZURE_WEBAPP_PACKAGE_PATH: 'build'  # set this to the path to your web app project, defaults to the repository root
+  NODE_VERSION: '14.x'                # set this to the node version to use
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    - name: npm install, build, and test
+      run: |
+        # Build and test the project, then
+        # deploy to Azure Web App.
+        npm install
+        CI=false && npm run build --if-present
+    - name: add process.json
+      run: |
+        echo '{ script: "serve", env: { PM2_SERVE_SPA: "true", PM2_SERVE_HOMEPAGE: "/index.html" } }' >> build/process.json
+    - name: 'Deploy to Azure WebApp'
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_182611733c354f4fa4e73eb32eaa40c9 }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
